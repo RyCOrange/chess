@@ -1,156 +1,46 @@
 import pygame
 
+pygame.init()
+
 # Define colors (RGB values) and frame rates
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (240, 240, 240)
 FPS = 30
 
-class w_pawn(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
+images = {}  # Empty global dict declared at module level
+
+def load_images():
+    """Call this once after pygame.display.set_mode()"""
+    global images
+    image_size = (75, 75)
+    image_files = {
+        "WP": "wp.png", "WR": "wr.png", "WN": "wn.png",
+        "WB": "wb.png", "WQ": "wq.png", "WK": "wk.png",
+        "BP": "bp.png", "BR": "br.png", "BN": "bn.png",
+        "BB": "bb.png", "BQ": "bq.png", "BK": "bk.png"
+    }
+    images = {name: pygame.transform.scale(pygame.image.load(file).convert_alpha(), image_size)
+              for name, file in image_files.items()}
+
+class chess_piece(pygame.sprite.Sprite):
+    def __init__(self, piece_type, name, x, y):
         super().__init__()
         self.name = name
-        self.image = WP_IMAGE.copy()
+        self.image = images[piece_type].copy()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.dragging = False
         self.offset = (0, 0)
 
-class w_rook(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = WR_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class w_knight(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = WN_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class w_bishop(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = WB_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class w_queen(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = WQ_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class w_king(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = WK_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_pawn(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BP_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_rook(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BR_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_knight(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BN_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_bishop(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BB_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_queen(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BQ_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
-
-class b_king(pygame.sprite.Sprite):
-    def __init__(self, name, x, y):
-        super().__init__()
-        self.name = name
-        self.image = BK_IMAGE.copy()
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.dragging = False
-        self.offset = (0, 0)
+def make_piece(piece_type, name, x, y):
+    return ChessPiece(piece_type, name, x, y)
 
 def main():
-    # Initialize Pygame
-    pygame.init()
-
     # Set Up the Display
-    screen_width = 600
-    screen_height = 600
-    window = pygame.display.set_mode((screen_width, screen_height))
+    window = pygame.display.set_mode((600, 600))
+    load_images()
     pygame.display.set_caption("Chess")
     window.fill((255, 255, 255))
-
-    # Define piece images
-    image_size = (75, 75)
-    global WP_IMAGE
-    WP_IMAGE = pygame.transform.scale(pygame.image.load("wp.png").convert_alpha(), image_size)
-    global WR_IMAGE
-    WR_IMAGE = pygame.transform.scale(pygame.image.load("wr.png").convert_alpha(), image_size)
-    global WN_IMAGE
-    WN_IMAGE = pygame.transform.scale(pygame.image.load("wn.png").convert_alpha(), image_size)
-    global WB_IMAGE
-    WB_IMAGE = pygame.transform.scale(pygame.image.load("wb.png").convert_alpha(), image_size)
-    global WQ_IMAGE
-    WQ_IMAGE = pygame.transform.scale(pygame.image.load("wq.png").convert_alpha(), image_size)
-    global WK_IMAGE
-    WK_IMAGE = pygame.transform.scale(pygame.image.load("wk.png").convert_alpha(), image_size)
-    global BP_IMAGE
-    BP_IMAGE = pygame.transform.scale(pygame.image.load("bp.png").convert_alpha(), image_size)
-    global BR_IMAGE
-    BR_IMAGE = pygame.transform.scale(pygame.image.load("br.png").convert_alpha(), image_size)
-    global BN_IMAGE
-    BN_IMAGE = pygame.transform.scale(pygame.image.load("bn.png").convert_alpha(), image_size)
-    global BB_IMAGE
-    BB_IMAGE = pygame.transform.scale(pygame.image.load("bb.png").convert_alpha(), image_size)
-    global BQ_IMAGE
-    BQ_IMAGE = pygame.transform.scale(pygame.image.load("bq.png").convert_alpha(), image_size)
-    global BK_IMAGE
-    BK_IMAGE = pygame.transform.scale(pygame.image.load("bk.png").convert_alpha(), image_size)
 
     # Creates checkerboard pattern
     for row in range(8):
@@ -161,55 +51,35 @@ def main():
                 pygame.draw.rect(window, BLACK, (x, y, 75, 75))
     pygame.display.update()
 
-    # Adds white pawns to game board
-    w_pawn_data = {"wpa": (0, 450), "wpb": (75, 450), "wpc": (150, 450), "wpd": (225, 450), "wpe": (300, 450), "wpf": (375, 450),
-                   "wpg": (450, 450), "wph": (525, 450)}
-    w_pawns = {name: w_pawn(name, x, y) for name, (x, y) in w_pawn_data.items()}
-
-    # Adds white rooks to game board
+    # White pieces
+    w_pawn_data = {"wpa": (0, 450), "wpb": (75, 450), "wpc": (150, 450), "wpd": (225, 450), 
+                   "wpe": (300, 450), "wpf": (375, 450), "wpg": (450, 450), "wph": (525, 450)}
+    w_pawns   = {name: chess_piece("WP", name, x, y) for name, (x, y) in w_pawn_data.items()}
     w_rook_data = {"wra": (0, 525), "wrh": (525, 525)}
-    w_rooks = {name: w_rook(name, x, y) for name, (x, y) in w_rook_data.items()}
-
-    # Adds white knights to game board
+    w_rooks   = {name: chess_piece("WR", name, x, y) for name, (x, y) in w_rook_data.items()}
     w_knight_data = {"wnb": (75, 525), "wng": (450, 525)}
-    w_knights = {name: w_knight(name, x, y) for name, (x, y) in w_knight_data.items()}
-
-    # Adds white bishops to game board
+    w_knights = {name: chess_piece("WN", name, x, y) for name, (x, y) in w_knight_data.items()}
     w_bishop_data = {"wbc": (150, 525), "wbf": (375, 525)}
-    w_bishops = {name: w_bishop(name, x, y) for name, (x, y) in w_bishop_data.items()}
-
-    # Adds white queen to game board
+    w_bishops = {name: chess_piece("WB", name, x, y) for name, (x, y) in w_bishop_data.items()}
     w_queen_data = {"wqd": (225, 525)}
-    w_queens = {name: w_queen(name, x, y) for name, (x, y) in w_queen_data.items()}
-
-    # Adds white king to game board
+    w_queens  = {name: chess_piece("WQ", name, x, y) for name, (x, y) in w_queen_data.items()}
     w_king_data = {"wke": (300, 525)}
-    w_kings = {name: w_king(name, x, y) for name, (x, y) in w_king_data.items()}
+    w_kings   = {name: chess_piece("WK", name, x, y) for name, (x, y) in w_king_data.items()}
 
-    # Adds black pawns to game board
-    b_pawn_data = {"bpa": (0, 75), "bpb": (75, 75), "bpc": (150, 75), "bpd": (225, 75), "bpe": (300, 75), "bpf": (375, 75),
-                   "bpg": (450, 75), "bph": (525, 75)}
-    b_pawns = {name: b_pawn(name, x, y) for name, (x, y) in b_pawn_data.items()}
-
-    # Adds black rooks to game board
+    # Black pieces
+    b_pawn_data = {"bpa": (0, 75), "bpb": (75, 75), "bpc": (150, 75), "bpd": (225, 75), 
+                   "bpe": (300, 75), "bpf": (375, 75), "bpg": (450, 75), "bph": (525, 75)}
+    b_pawns   = {name: chess_piece("BP", name, x, y) for name, (x, y) in b_pawn_data.items()}
     b_rook_data = {"bra": (0, 0), "brh": (525, 0)}
-    b_rooks = {name: b_rook(name, x, y) for name, (x, y) in b_rook_data.items()}
-
-    # Adds black knights to game board
+    b_rooks   = {name: chess_piece("BR", name, x, y) for name, (x, y) in b_rook_data.items()}
     b_knight_data = {"bnb": (75, 0), "bng": (450, 0)}
-    b_knights = {name: b_knight(name, x, y) for name, (x, y) in b_knight_data.items()}
-
-    # Adds black bishops to game board
+    b_knights = {name: chess_piece("BN", name, x, y) for name, (x, y) in b_knight_data.items()}
     b_bishop_data = {"bbc": (150, 0), "bbf": (375, 0)}
-    b_bishops = {name: b_bishop(name, x, y) for name, (x, y) in b_bishop_data.items()}
-
-    # Adds black queen to game board
+    b_bishops = {name: chess_piece("BB", name, x, y) for name, (x, y) in b_bishop_data.items()}
     b_queen_data = {"bqd": (225, 0)}
-    b_queens = {name: b_queen(name, x, y) for name, (x, y) in b_queen_data.items()}
-
-    # Adds black king to game board
+    b_queens  = {name: chess_piece("BQ", name, x, y) for name, (x, y) in b_queen_data.items()}
     b_king_data = {"bke": (300, 0)}
-    b_kings = {name: b_king(name, x, y) for name, (x, y) in b_king_data.items()}
+    b_kings   = {name: chess_piece("BK", name, x, y) for name, (x, y) in b_king_data.items()}
 
     all_pieces = (list(w_pawns.values()) + list(w_rooks.values()) + list(w_knights.values()) 
                   + list(w_bishops.values()) + list(w_queens.values()) + list(w_kings.values()) 

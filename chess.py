@@ -38,17 +38,47 @@ class chess_piece(pygame.sprite.Sprite):
         self.dragging = False
         self.offset = (0, 0)
 
-    def valid_moves(self):
+    def valid_moves(self, all_pieces):
         col = self.rect.x // 75
         row = self.rect.y // 75
 
-        if self.piece_type == "WP" and row == 6:
-            return [(col, row - 1), (col, row - 2)]
-        elif self.piece_type == "WP":
-            return [(col, row - 1)]
+        occupied = {(p.rect.x // 75, p.rect.y // 75): p for p in all_pieces if p != self}
+
+        # Pawn movement instructions
+        if self.piece_type == "WP":
+            moves = []
+            one_ahead = (col, row - 1)
+            two_ahead = (col, row - 2)
+
+            # Can only move forward if square is empty
+            if one_ahead not in occupied:
+                moves.append(one_ahead)
+                # Two square advance only from starting row and if path is clear
+                if row == 6 and two_ahead not in occupied:
+                    moves.append(two_ahead)
+
+            # Diagonal captures - only if an enemy piece is there
+            for capture_col in [col - 1, col + 1]:
+                target = (capture_col, row - 1)
+                if target in occupied and occupied[target].piece_type.startswith("B"):
+                    moves.append(target)
+            
+            return moves, occupied
+
         if self.piece_type == "WN":
-            return [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
-                    (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
+            wn_moves = [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
+                        (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
+            moves = []
+            for target in wn_moves:
+                if target not in occupied:
+                    moves.append(target)  # Empty square, valid move
+                elif occupied[target].piece_type.startswith("B"):
+                    moves.append(target)  # Enemy piece, valid capture
+                # If friendly piece, do nothing (blocked)
+            return moves, occupied
+    def promote(self, new_type):
+        self.piece_type = new_type
+        self.image = images[new_type].copy()
 
 def main():
     # Set Up the Display
@@ -105,6 +135,9 @@ def main():
     clock = pygame.time.Clock()
     selected_piece = None
     valid_moves = []
+    occupied = {}
+    promoting = False
+    promoting_piece = None
     #######################
     # Begin gameplay loop #
     #######################
@@ -116,13 +149,21 @@ def main():
             # Piece movement
             elif event.type == pygame.MOUSEBUTTONDOWN: # Initiates drag
                 if event.button == 1:
-                    for piece in reversed(all_pieces):
-                        if piece.rect.collidepoint(event.pos):
-                            piece.dragging = True
-                            piece.offset = (piece.rect.x - event.pos[0], piece.rect.y - event.pos[1])
-                            piece.origin = (piece.rect.x, piece.rect.y)
-                            valid_moves = piece.valid_moves()
-                            break
+                    if promoting:
+                        for i, option in enumerate(["WQ", "WR", "WB", "WN"]):
+                            if pygame.Rect(i * 75, 262, 75, 75).collidepoint(event.pos):
+                                promoting_piece.promote(option)
+                                promoting = False
+                                break
+                    else:
+                        for piece in reversed(all_pieces):
+                            if piece.rect.collidepoint(event.pos):
+                                piece.dragging = True
+                                piece.offset = (piece.rect.x - event.pos[0], piece.rect.y - event.pos[1])
+                                piece.origin = (piece.rect.x, piece.rect.y)
+                                valid_moves, occupied = piece.valid_moves(all_pieces)
+                                break
+                
 
             elif event.type == pygame.MOUSEBUTTONUP: # Stops dragging
                 if event.button == 1:
@@ -131,6 +172,9 @@ def main():
                             # Snap to nearest square by rounding to nearest 75px
                             col = round(piece.rect.x / 75)
                             row = round(piece.rect.y / 75)
+                            if piece.piece_type == "WP" and row == 0:
+                                promoting = True
+                                promoting_piece = piece
 
                             # Clamp to board boundaries (0–7)
                             col = max(0, min(7, col))
@@ -138,6 +182,12 @@ def main():
 
                             # Apply snapped position
                             if (col, row) in valid_moves:
+                                for target_piece in all_pieces[:]:  # [:] to safely remove while iterating
+                                    if (target_piece.rect.x // 75 == col and 
+                                        target_piece.rect.y // 75 == row and 
+                                        target_piece != piece):
+                                        all_pieces.remove(target_piece)  # Remove captured piece
+                                        break
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
                             else:
@@ -168,7 +218,16 @@ def main():
 
         # Highlights valid move location
         for (col, row) in valid_moves:
-            pygame.draw.rect(window, LT_GREEN, (col * 75, row * 75, 75, 75))
+            target = (col, row)
+            if target in occupied and occupied[target].piece_type.startswith("B"):
+                pygame.draw.rect(window, LT_RED, (col * 75, row * 75, 75, 75))
+            else:
+                pygame.draw.rect(window, LT_GREEN, (col * 75, row * 75, 75, 75))
+        
+        if promoting:
+            for i, option in enumerate(["WQ", "WR", "WB", "WN"]):
+                pygame.draw.rect(window, WHITE, (i * 75, 262, 75, 75))
+                window.blit(images[option], (i * 75, 262))
 
         pygame.display.flip()
         clock.tick(FPS)

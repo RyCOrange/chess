@@ -26,6 +26,19 @@ def load_images():
     }
     images = {name: pygame.transform.scale(pygame.image.load(file).convert_alpha(), image_size)
               for name, file in image_files.items()}
+    
+# Rotates the board
+def transform(x, y, rotated):
+    """Flip coordinates 180° around board center if rotated."""
+    if rotated:
+        return 525 - x, 525 - y  # 525 = 7 * 75
+    return x, y
+
+def get_image(piece_type, rotated):
+    img = images[piece_type].copy()
+    if rotated:
+        return pygame.transform.rotate(img, 180)
+    return img
 
 # Sets up general chess piece class
 class chess_piece(pygame.sprite.Sprite):
@@ -44,7 +57,7 @@ class chess_piece(pygame.sprite.Sprite):
 
         occupied = {(p.rect.x // 75, p.rect.y // 75): p for p in all_pieces if p != self}
 
-        # Pawn movement instructions
+        # White pawn movement instructions
         if self.piece_type == "WP":
             moves = []
             one_ahead = (col, row - 1)
@@ -77,6 +90,27 @@ class chess_piece(pygame.sprite.Sprite):
                 # If friendly piece, do nothing (blocked)
             return moves, occupied
         
+        # Pawn movement instructions
+        if self.piece_type == "BP":
+            moves = []
+            one_ahead = (col, row + 1)
+            two_ahead = (col, row + 2)
+
+            # Can only move forward if square is empty
+            if one_ahead not in occupied:
+                moves.append(one_ahead)
+                # Two square advance only from starting row and if path is clear
+                if row == 2 and two_ahead not in occupied:
+                    moves.append(two_ahead)
+
+            # Diagonal captures - only if an enemy piece is there
+            for capture_col in [col + 1, col - 1]:
+                target = (capture_col, row + 1)
+                if target in occupied and occupied[target].piece_type.startswith("W"):
+                    moves.append(target)
+            
+            return moves, occupied
+
         if self.piece_type == "BN":
             wn_moves = [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
                         (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
@@ -147,6 +181,8 @@ def main():
     running = True
     clock = pygame.time.Clock()
     selected_piece = None
+    white_turn = True
+    rotated = False
     valid_moves = []
     occupied = {}
     promoting = False
@@ -161,6 +197,7 @@ def main():
 
             # Piece movement
             elif event.type == pygame.MOUSEBUTTONDOWN: # Initiates drag
+                mx, my = transform(event.pos[0], event.pos[1], rotated)
                 if event.button == 1:
                     if promoting:
                         for i, option in enumerate(["WQ", "WR", "WB", "WN"]):
@@ -170,12 +207,14 @@ def main():
                                 break
                     else:
                         for piece in reversed(all_pieces):
-                            if piece.rect.collidepoint(event.pos):
-                                piece.dragging = True
-                                piece.offset = (piece.rect.x - event.pos[0], piece.rect.y - event.pos[1])
-                                piece.origin = (piece.rect.x, piece.rect.y)
-                                valid_moves, occupied = piece.valid_moves(all_pieces)
-                                break
+                            if piece.rect.collidepoint(mx, my):
+                                if (white_turn and piece.piece_type.startswith("W")) or \
+                                    (not white_turn and piece.piece_type.startswith("B")):
+                                        piece.dragging = True
+                                        piece.offset = (piece.rect.x - mx, piece.rect.y - my)
+                                        piece.origin = (piece.rect.x, piece.rect.y)
+                                        valid_moves, occupied = piece.valid_moves(all_pieces)
+                                        break
                 
 
             elif event.type == pygame.MOUSEBUTTONUP: # Stops dragging
@@ -185,7 +224,11 @@ def main():
                             # Snap to nearest square by rounding to nearest 75px
                             col = round(piece.rect.x / 75)
                             row = round(piece.rect.y / 75)
+                            # Activates pawn promotion
                             if piece.piece_type == "WP" and row == 0:
+                                promoting = True
+                                promoting_piece = piece
+                            elif piece.piece_type == "BP" and row == 7:
                                 promoting = True
                                 promoting_piece = piece
 
@@ -203,6 +246,8 @@ def main():
                                         break
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
+                                white_turn = not white_turn
+                                rotated = not rotated
                             else:
                                 piece.rect.x, piece.rect.y = piece.origin
 
@@ -210,10 +255,11 @@ def main():
                     valid_moves = []
 
             elif event.type == pygame.MOUSEMOTION: # Moves piece while dragging
+                mx, my = transform(event.pos[0], event.pos[1], rotated)
                 for piece in all_pieces:
                     if piece.dragging:
-                        piece.rect.x = event.pos[0] + piece.offset[0]
-                        piece.rect.y = event.pos[1] + piece.offset[1]
+                        piece.rect.x = mx + piece.offset[0]
+                        piece.rect.y = my + piece.offset[1]
 
         ##################
         # Redraw Objects #
@@ -227,15 +273,17 @@ def main():
 
         # Draws pieces during movement
         for piece in all_pieces:
-            window.blit(piece.image, piece.rect)
+            dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
+            window.blit(piece.image, (dx, dy))
 
         # Highlights valid move location
         for (col, row) in valid_moves:
+            dx, dy = transform(col * 75, row * 75, rotated)
             target = (col, row)
             if target in occupied and occupied[target]:
-                pygame.draw.rect(window, LT_RED, (col * 75, row * 75, 75, 75))
+                pygame.draw.rect(window, LT_RED, (dx, dy, 75, 75))
             else:
-                pygame.draw.rect(window, LT_GREEN, (col * 75, row * 75, 75, 75))
+                pygame.draw.rect(window, LT_GREEN, (dx, dy, 75, 75))
         
         if promoting:
             for i, option in enumerate(["WQ", "WR", "WB", "WN"]):

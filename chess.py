@@ -309,7 +309,7 @@ def main():
         if promoting:
             options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]
             for i, option in enumerate(options):
-                pygame.draw.rect(window, WHITE, (i * 75, 262, 75, 75))
+                pygame.draw.rect(window, GRAY, (i * 75, 262, 75, 75))
                 window.blit(images[option], (i * 75, 262))
 
         pygame.display.flip()

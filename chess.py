@@ -69,6 +69,51 @@ class b_pawn(pygame.sprite.Sprite):
         self.dragging = False
         self.offset = (0, 0)
 
+class b_rook(pygame.sprite.Sprite):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.image = BR_IMAGE.copy()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.dragging = False
+        self.offset = (0, 0)
+
+class b_knight(pygame.sprite.Sprite):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.image = BN_IMAGE.copy()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.dragging = False
+        self.offset = (0, 0)
+
+class b_bishop(pygame.sprite.Sprite):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.image = BB_IMAGE.copy()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.dragging = False
+        self.offset = (0, 0)
+
+class b_queen(pygame.sprite.Sprite):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.image = BQ_IMAGE.copy()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.dragging = False
+        self.offset = (0, 0)
+
+class b_king(pygame.sprite.Sprite):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.image = BK_IMAGE.copy()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.dragging = False
+        self.offset = (0, 0)
+
 def main():
     # Initialize Pygame
     pygame.init()
@@ -96,6 +141,16 @@ def main():
     WK_IMAGE = pygame.transform.scale(pygame.image.load("wk.png").convert_alpha(), image_size)
     global BP_IMAGE
     BP_IMAGE = pygame.transform.scale(pygame.image.load("bp.png").convert_alpha(), image_size)
+    global BR_IMAGE
+    BR_IMAGE = pygame.transform.scale(pygame.image.load("br.png").convert_alpha(), image_size)
+    global BN_IMAGE
+    BN_IMAGE = pygame.transform.scale(pygame.image.load("bn.png").convert_alpha(), image_size)
+    global BB_IMAGE
+    BB_IMAGE = pygame.transform.scale(pygame.image.load("bb.png").convert_alpha(), image_size)
+    global BQ_IMAGE
+    BQ_IMAGE = pygame.transform.scale(pygame.image.load("bq.png").convert_alpha(), image_size)
+    global BK_IMAGE
+    BK_IMAGE = pygame.transform.scale(pygame.image.load("bk.png").convert_alpha(), image_size)
 
     # Creates checkerboard pattern
     for row in range(8):
@@ -136,8 +191,30 @@ def main():
                    "bpg": (450, 75), "bph": (525, 75)}
     b_pawns = {name: b_pawn(name, x, y) for name, (x, y) in b_pawn_data.items()}
 
+    # Adds black rooks to game board
+    b_rook_data = {"bra": (0, 0), "brh": (525, 0)}
+    b_rooks = {name: b_rook(name, x, y) for name, (x, y) in b_rook_data.items()}
+
+    # Adds black knights to game board
+    b_knight_data = {"bnb": (75, 0), "bng": (450, 0)}
+    b_knights = {name: b_knight(name, x, y) for name, (x, y) in b_knight_data.items()}
+
+    # Adds black bishops to game board
+    b_bishop_data = {"bbc": (150, 0), "bbf": (375, 0)}
+    b_bishops = {name: b_bishop(name, x, y) for name, (x, y) in b_bishop_data.items()}
+
+    # Adds black queen to game board
+    b_queen_data = {"bqd": (225, 0)}
+    b_queens = {name: b_queen(name, x, y) for name, (x, y) in b_queen_data.items()}
+
+    # Adds black king to game board
+    b_king_data = {"bke": (300, 0)}
+    b_kings = {name: b_king(name, x, y) for name, (x, y) in b_king_data.items()}
+
     all_pieces = (list(w_pawns.values()) + list(w_rooks.values()) + list(w_knights.values()) 
-                  + list(w_bishops.values()) + list(w_queens.values()) + list(w_kings.values()) + list(b_pawns.values()))
+                  + list(w_bishops.values()) + list(w_queens.values()) + list(w_kings.values()) 
+                  + list(b_pawns.values()) + list(b_rooks.values()) + list(b_knights.values()) 
+                  + list(b_bishops.values()) + list(b_queens.values()) + list(b_kings.values()))
 
     running = True
     clock = pygame.time.Clock()

@@ -58,6 +58,9 @@ class chess_piece(pygame.sprite.Sprite):
 
         occupied = {(p.rect.x // 75, p.rect.y // 75): p for p in all_pieces if p != self}
 
+        ################
+        # White pieces #
+        ################
         # White pawn movement
         if self.piece_type == "WP":
             moves = []
@@ -154,6 +157,9 @@ class chess_piece(pygame.sprite.Sprite):
                 # If friendly piece, do nothing (blocked)
             return moves, occupied
         
+        ################
+        # Black pieces #
+        ################
         # Black pawn movement
         if self.piece_type == "BP":
             moves = []
@@ -254,7 +260,9 @@ class chess_piece(pygame.sprite.Sprite):
         self.piece_type = new_type
         self.image = images[new_type].copy()
 
-
+########
+# main #
+########
 def main():
     # Set Up the Display
     window = pygame.display.set_mode((600, 600))

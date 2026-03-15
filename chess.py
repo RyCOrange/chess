@@ -100,7 +100,7 @@ class chess_piece(pygame.sprite.Sprite):
             if one_ahead not in occupied:
                 moves.append(one_ahead)
                 # Two square advance only from starting row and if path is clear
-                if row == 2 and two_ahead not in occupied:
+                if row == 1 and two_ahead not in occupied:
                     moves.append(two_ahead)
 
             # Diagonal captures - only if an enemy piece is there
@@ -122,10 +122,12 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
             return moves, occupied
+        return [], occupied
 
     def promote(self, new_type):
         self.piece_type = new_type
         self.image = images[new_type].copy()
+
 
 def main():
     # Set Up the Display
@@ -143,6 +145,10 @@ def main():
                 pygame.draw.rect(window, BLACK, (x, y, 75, 75))
     pygame.display.update()
 
+
+    ####################
+    # Piece Definition #
+    ####################
     # White pieces
     w_pawn_data = {"wpa": (0, 450), "wpb": (75, 450), "wpc": (150, 450), "wpd": (225, 450), 
                    "wpe": (300, 450), "wpf": (375, 450), "wpg": (450, 450), "wph": (525, 450)}
@@ -178,6 +184,9 @@ def main():
                   + list(b_pawns.values()) + list(b_rooks.values()) + list(b_knights.values()) 
                   + list(b_bishops.values()) + list(b_queens.values()) + list(b_kings.values()))
 
+    #####################
+    # Pre-game settings #
+    #####################
     running = True
     clock = pygame.time.Clock()
     selected_piece = None
@@ -195,7 +204,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-            # Piece movement
+            ########################
+            # Mouse button pressed #
+            ########################
             elif event.type == pygame.MOUSEBUTTONDOWN: # Initiates drag
                 mx, my = transform(event.pos[0], event.pos[1], rotated)
                 if event.button == 1:
@@ -207,17 +218,21 @@ def main():
                                 break
                     else:
                         for piece in reversed(all_pieces):
-                            if piece.rect.collidepoint(mx, my):
+                            dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
+                            if pygame.Rect(dx, dy, 75, 75).collidepoint(event.pos):
                                 if (white_turn and piece.piece_type.startswith("W")) or \
                                     (not white_turn and piece.piece_type.startswith("B")):
                                         piece.dragging = True
+                                        bx, by = transform(mx, my, rotated)
                                         piece.offset = (piece.rect.x - mx, piece.rect.y - my)
                                         piece.origin = (piece.rect.x, piece.rect.y)
                                         valid_moves, occupied = piece.valid_moves(all_pieces)
                                         break
                 
-
-            elif event.type == pygame.MOUSEBUTTONUP: # Stops dragging
+            #########################
+            # Mouse button released #
+            #########################
+            elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     for piece in all_pieces:
                         if piece.dragging:
@@ -254,6 +269,9 @@ def main():
                         piece.dragging = False
                     valid_moves = []
 
+            ###############
+            # Mouse moves #
+            ###############
             elif event.type == pygame.MOUSEMOTION: # Moves piece while dragging
                 mx, my = transform(event.pos[0], event.pos[1], rotated)
                 for piece in all_pieces:

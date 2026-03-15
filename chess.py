@@ -42,7 +42,9 @@ class chess_piece(pygame.sprite.Sprite):
         col = self.rect.x // 75
         row = self.rect.y // 75
 
-        if self.piece_type == "WP" or self.piece_type == "BP":
+        if self.piece_type == "WP" and row == 6:
+            return [(col, row - 1), (col, row - 2)]
+        elif self.piece_type == "WP":
             return [(col, row - 1)]
         if self.piece_type == "WN":
             return [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 

@@ -102,9 +102,22 @@ def main():
                             piece.offset = (piece.rect.x - event.pos[0], piece.rect.y - event.pos[1])
                             break
 
-            elif event.type == pygame.MOUSEBUTTONUP: # Stops drag
+            elif event.type == pygame.MOUSEBUTTONUP: # Stops dragging
                 if event.button == 1:
                     for piece in all_pieces:
+                        if piece.dragging:
+                            # Snap to nearest square by rounding to nearest 75px
+                            col = round(piece.rect.x / 75)
+                            row = round(piece.rect.y / 75)
+
+                            # Clamp to board boundaries (0–7)
+                            col = max(0, min(7, col))
+                            row = max(0, min(7, row))
+
+                            # Apply snapped position
+                            piece.rect.x = col * 75
+                            piece.rect.y = row * 75
+
                         piece.dragging = False
 
             elif event.type == pygame.MOUSEMOTION: # Moves piece while dragging

@@ -8,8 +8,9 @@ BLACK = (0, 0, 0)
 GRAY = (240, 240, 240)
 FPS = 30
 
-images = {}  # Empty global dict declared at module level
+images = {}  # Empty global dict
 
+# Loads images tied to piece ID
 def load_images():
     """Call this once after pygame.display.set_mode()"""
     global images
@@ -23,6 +24,7 @@ def load_images():
     images = {name: pygame.transform.scale(pygame.image.load(file).convert_alpha(), image_size)
               for name, file in image_files.items()}
 
+# Sets up general chess piece class
 class chess_piece(pygame.sprite.Sprite):
     def __init__(self, piece_type, name, x, y):
         super().__init__()
@@ -31,9 +33,6 @@ class chess_piece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.dragging = False
         self.offset = (0, 0)
-
-def make_piece(piece_type, name, x, y):
-    return ChessPiece(piece_type, name, x, y)
 
 def main():
     # Set Up the Display

@@ -76,6 +76,19 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
             return moves, occupied
+        
+        if self.piece_type == "BN":
+            wn_moves = [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
+                        (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
+            moves = []
+            for target in wn_moves:
+                if target not in occupied:
+                    moves.append(target)  # Empty square, valid move
+                elif occupied[target].piece_type.startswith("W"):
+                    moves.append(target)  # Enemy piece, valid capture
+                # If friendly piece, do nothing (blocked)
+            return moves, occupied
+
     def promote(self, new_type):
         self.piece_type = new_type
         self.image = images[new_type].copy()
@@ -219,7 +232,7 @@ def main():
         # Highlights valid move location
         for (col, row) in valid_moves:
             target = (col, row)
-            if target in occupied and occupied[target].piece_type.startswith("B"):
+            if target in occupied and occupied[target]:
                 pygame.draw.rect(window, LT_RED, (col * 75, row * 75, 75, 75))
             else:
                 pygame.draw.rect(window, LT_GREEN, (col * 75, row * 75, 75, 75))

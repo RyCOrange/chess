@@ -7,8 +7,6 @@ pygame.init()
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (240, 240, 240)
-LT_GREEN = (144, 238, 144, 128)
-LT_RED = (255, 128, 128, 128)
 
 FPS = 30
 
@@ -16,7 +14,6 @@ images = {}  # Empty global dict
 
 # Loads images tied to piece ID
 def load_images():
-    """Call this once after pygame.display.set_mode()"""
     global images
     image_size = (75, 75)
     image_files = {

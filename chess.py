@@ -1,4 +1,5 @@
 import pygame
+import time
 
 pygame.init()
 
@@ -211,7 +212,8 @@ def main():
                 mx, my = transform(event.pos[0], event.pos[1], rotated)
                 if event.button == 1:
                     if promoting:
-                        for i, option in enumerate(["WQ", "WR", "WB", "WN"]):
+                        options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]
+                        for i, option in enumerate(options):
                             if pygame.Rect(i * 75, 262, 75, 75).collidepoint(event.pos):
                                 promoting_piece.promote(option)
                                 promoting = False
@@ -261,6 +263,7 @@ def main():
                                         break
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
+                                time.sleep(0.5)
                                 white_turn = not white_turn
                                 rotated = not rotated
                             else:
@@ -304,7 +307,8 @@ def main():
                 pygame.draw.rect(window, LT_GREEN, (dx, dy, 75, 75))
         
         if promoting:
-            for i, option in enumerate(["WQ", "WR", "WB", "WN"]):
+            options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]
+            for i, option in enumerate(options):
                 pygame.draw.rect(window, WHITE, (i * 75, 262, 75, 75))
                 window.blit(images[option], (i * 75, 262))
 

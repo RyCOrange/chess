@@ -58,7 +58,7 @@ class chess_piece(pygame.sprite.Sprite):
 
         occupied = {(p.rect.x // 75, p.rect.y // 75): p for p in all_pieces if p != self}
 
-        # White pawn movement instructions
+        # White pawn movement
         if self.piece_type == "WP":
             moves = []
             one_ahead = (col, row - 1)
@@ -79,6 +79,7 @@ class chess_piece(pygame.sprite.Sprite):
             
             return moves, occupied
 
+        # White knight movement
         if self.piece_type == "WN":
             wn_moves = [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
                         (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
@@ -91,7 +92,69 @@ class chess_piece(pygame.sprite.Sprite):
                 # If friendly piece, do nothing (blocked)
             return moves, occupied
         
-        # Pawn movement instructions
+        # White queen movement
+        if self.piece_type == "WQ":
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1),   # rook directions
+                  (1, 1), (1, -1), (-1, 1), (-1, -1)]   # bishop directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("B"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # White rook movement
+        if self.piece_type == "WR":
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]   # rook directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("B"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # White bishop movement
+        if self.piece_type == "WB":
+            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]   # bishop directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("B"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # White king movement
+        if self.piece_type == "WK":
+            wk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
+                        (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
+            moves = []
+            for target in wk_moves:
+                if target not in occupied:
+                    moves.append(target)  # Empty square, valid move
+                elif occupied[target].piece_type.startswith("B"):
+                    moves.append(target)  # Enemy piece, valid capture
+                # If friendly piece, do nothing (blocked)
+            return moves, occupied
+        
+        # Black pawn movement
         if self.piece_type == "BP":
             moves = []
             one_ahead = (col, row + 1)
@@ -117,6 +180,68 @@ class chess_piece(pygame.sprite.Sprite):
                         (col + 1, row + 2), (col - 2, row + 1), (col + 2, row + 1), (col + 2, row - 1)]
             moves = []
             for target in wn_moves:
+                if target not in occupied:
+                    moves.append(target)  # Empty square, valid move
+                elif occupied[target].piece_type.startswith("W"):
+                    moves.append(target)  # Enemy piece, valid capture
+                # If friendly piece, do nothing (blocked)
+            return moves, occupied
+    
+        # Black queen movement
+        if self.piece_type == "BQ":
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1),   # rook directions
+                (1, 1), (1, -1), (-1, 1), (-1, -1)]   # bishop directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("W"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # White rook movement
+        if self.piece_type == "BR":
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]   # rook directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("W"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # White bishop movement
+        if self.piece_type == "BB":
+            directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]   # bishop directions
+            moves = []
+            for dx, dy in directions:
+                cx, cy = col + dx, row + dy
+                while 0 <= cx <= 7 and 0 <= cy <= 7:
+                    if (cx, cy) in occupied:
+                        if occupied[(cx, cy)].piece_type.startswith("W"):
+                            moves.append((cx, cy))  # Can capture enemy
+                        break  # Blocked by any piece (friendly or enemy)
+                    moves.append((cx, cy))  # Empty square
+                    cx += dx
+                    cy += dy
+            return moves, occupied
+        
+        # Black king moves
+        if self.piece_type == "BK":
+            bk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
+                        (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
+            moves = []
+            for target in bk_moves:
                 if target not in occupied:
                     moves.append(target)  # Empty square, valid move
                 elif occupied[target].piece_type.startswith("W"):

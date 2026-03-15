@@ -7,8 +7,8 @@ pygame.init()
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (240, 240, 240)
-LT_GREEN = (144, 238, 144)
-LT_RED = (255, 128, 128)
+LT_GREEN = (144, 238, 144, 128)
+LT_RED = (255, 128, 128, 128)
 
 FPS = 30
 
@@ -426,10 +426,14 @@ def main():
         for (col, row) in valid_moves:
             dx, dy = transform(col * 75, row * 75, rotated)
             target = (col, row)
+            highlight = pygame.Surface((75, 75), pygame.SRCALPHA)
+    
             if target in occupied and occupied[target]:
-                pygame.draw.rect(window, LT_RED, (dx, dy, 75, 75))
+                highlight.fill((255, 128, 128, 128))  # Semi-transparent red
             else:
-                pygame.draw.rect(window, LT_GREEN, (dx, dy, 75, 75))
+                highlight.fill((144, 238, 144, 128))  # Semi-transparent green
+            
+            window.blit(highlight, (dx, dy))
         
         if promoting:
             options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]

@@ -48,6 +48,7 @@ class chess_piece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.dragging = False
         self.offset = (0, 0)
+        self.move_counter = 0
 
     def valid_moves(self, all_pieces):
         col = self.rect.x // 75
@@ -143,6 +144,8 @@ class chess_piece(pygame.sprite.Sprite):
         
         # White king movement
         if self.piece_type == "WK":
+            wk_moves = [...]
+            moves = []
             wk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
                         (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
             moves = []
@@ -152,6 +155,18 @@ class chess_piece(pygame.sprite.Sprite):
                 elif occupied[target].piece_type.startswith("B"):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
+            # Kingside castling
+            if self.move_counter == 0:
+                rook = occupied.get((7, 7))
+                if rook and rook.piece_type == "WR" and rook.move_counter == 0:
+                    if (6, 7) not in occupied and (5, 7) not in occupied:
+                        moves.append((6, 7))
+
+                # Queenside castling
+                rook = occupied.get((0, 7))
+                if rook and rook.piece_type == "WR" and rook.move_counter == 0:
+                    if (1, 7) not in occupied and (2, 7) not in occupied and (3, 7) not in occupied:
+                        moves.append((2, 7))
             return moves, occupied
         
         ################
@@ -241,6 +256,8 @@ class chess_piece(pygame.sprite.Sprite):
         
         # Black king moves
         if self.piece_type == "BK":
+            bk_moves = [...]
+            moves = []
             bk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
                         (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
             moves = []
@@ -250,6 +267,18 @@ class chess_piece(pygame.sprite.Sprite):
                 elif occupied[target].piece_type.startswith("W"):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
+            # Kingside castling
+            if self.move_counter == 0:
+                rook = occupied.get((7, 0))
+                if rook and rook.piece_type == "BR" and rook.move_counter == 0:
+                    if (6, 0) not in occupied and (5, 0) not in occupied:
+                        moves.append((6, 0))
+
+                # Queenside castling
+                rook = occupied.get((0, 0))
+                if rook and rook.piece_type == "BR" and rook.move_counter == 0:
+                    if (1, 0) not in occupied and (2, 0) not in occupied and (3, 0) not in occupied:
+                        moves.append((2, 0))
             return moves, occupied
         return [], occupied
 
@@ -327,6 +356,8 @@ def main():
     occupied = {}
     promoting = False
     promoting_piece = None
+    castling = False
+    castling_king = None
     #######################
     # Begin gameplay loop #
     #######################
@@ -393,6 +424,18 @@ def main():
                                         break
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
+                                piece.move_counter += 1
+                                # Castling: if king moved 2 squares, move the rook too
+                                if piece.piece_type in ("WK", "BK") and abs(col - (piece.origin[0] // 75)) == 2:
+                                    if col == 6:  # Kingside
+                                        rook_origin_col, rook_dest_col = 7, 5
+                                    else:         # Queenside
+                                        rook_origin_col, rook_dest_col = 0, 3
+                                    for p in all_pieces:
+                                        if p.rect.x // 75 == rook_origin_col and p.rect.y // 75 == row:
+                                            p.rect.x = rook_dest_col * 75
+                                            p.move_counter += 1
+                                            break
                                 time.sleep(0.5)
                                 white_turn = not white_turn
                                 rotated = not rotated

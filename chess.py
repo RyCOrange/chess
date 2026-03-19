@@ -38,6 +38,83 @@ def get_image(piece_type, rotated):
         return pygame.transform.rotate(img, 180)
     return img
 
+#################
+# Check testing #
+#################
+
+# Tests if king is in check
+def is_in_check(all_pieces, white_king_turn):
+    prefix = "W" if white_king_turn else "B"
+    enemy_prefix = "B" if white_king_turn else "W"
+
+    # Find the current player's king
+    king = next((p for p in all_pieces if p.piece_type == f"{prefix}K"), None)
+    if not king:
+        return False
+    king_pos = (king.rect.x // 75, king.rect.y // 75)
+
+    # Check if any enemy piece can attack the king's square
+    for piece in all_pieces:
+        if piece.piece_type.startswith(enemy_prefix):
+            moves, _, _, _ = piece.valid_moves(all_pieces, turn_number=0)
+            if king_pos in moves:
+                return True
+    return False
+
+# Simulates next move to see if king will be in check
+def move_leaves_king_in_check(piece, target_col, target_row, all_pieces, white_turn):
+    import copy
+
+    # Make shallow copies of pieces but ensure each has its own Rect
+    sim_pieces = []
+    for p in all_pieces:
+        sp = copy.copy(p)
+        try:
+            sp.rect = p.rect.copy()
+        except Exception:
+            sp.rect = pygame.Rect(p.rect)
+        sim_pieces.append(sp)
+
+    # Find the corresponding piece in the simulation
+    sim_piece = next(p for p in sim_pieces if p.name == piece.name)
+
+    # Remove any captured piece from simulation
+    sim_pieces = [p for p in sim_pieces
+                  if not (p.rect.x // 75 == target_col and
+                          p.rect.y // 75 == target_row and
+                          p != sim_piece)]
+
+    # Apply the move to the simulated piece only
+    sim_piece.rect.x = target_col * 75
+    sim_piece.rect.y = target_row * 75
+
+    return is_in_check(sim_pieces, white_turn)
+
+# Sends only moves to keep king out of check
+def get_legal_moves(piece, all_pieces, white_turn, turn_number):
+    moves, occupied, castling_moves, en_passant_moves = piece.valid_moves(all_pieces, turn_number)
+    legal = [m for m in moves
+             if not move_leaves_king_in_check(piece, m[0], m[1], all_pieces, white_turn)]
+    return legal, occupied, castling_moves, en_passant_moves
+
+# Checkmate condition
+def is_checkmate(all_pieces, white_turn, turn_number):
+    """Returns True if the current player has no legal moves and is in check."""
+    if not is_in_check(all_pieces, white_turn):
+        return False  # Not in check, so can't be checkmate (could be stalemate)
+
+    prefix = "W" if white_turn else "B"
+    for piece in all_pieces:
+        if piece.piece_type.startswith(prefix):
+            legal, _, _, _ = get_legal_moves(piece, all_pieces, white_turn, turn_number)
+            if legal:
+                return False  # Found at least one legal move
+    return True
+
+###############
+# Piece Setup #
+###############
+
 # Sets up general chess piece class
 class chess_piece(pygame.sprite.Sprite):
     def __init__(self, piece_type, name, x, y):
@@ -369,6 +446,9 @@ def main():
     #####################
     # Pre-game settings #
     #####################
+    font = pygame.font.SysFont(None, 60)
+    in_check = False
+    game_over = False
     running = True
     clock = pygame.time.Clock()
     selected_piece = None
@@ -395,27 +475,27 @@ def main():
             # Mouse button pressed #
             ########################
             elif event.type == pygame.MOUSEBUTTONDOWN: # Initiates drag
-                mx, my = transform(event.pos[0], event.pos[1], rotated)
-                if event.button == 1:
-                    if promoting:
-                        options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]
-                        for i, option in enumerate(options):
-                            if pygame.Rect(i * 75, 262, 75, 75).collidepoint(event.pos):
-                                promoting_piece.promote(option)
-                                promoting = False
-                                break
-                    else:
-                        for piece in reversed(all_pieces):
-                            dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
-                            if pygame.Rect(dx, dy, 75, 75).collidepoint(event.pos):
-                                if (white_turn and piece.piece_type.startswith("W")) or \
-                                    (not white_turn and piece.piece_type.startswith("B")):
-                                        piece.dragging = True
-                                        bx, by = transform(mx, my, rotated)
-                                        piece.offset = (piece.rect.x - mx, piece.rect.y - my)
-                                        piece.origin = (piece.rect.x, piece.rect.y)
-                                        valid_moves, occupied, castling_moves, en_passant_moves = piece.valid_moves(all_pieces, turn_number)
-                                        break
+                if not game_over:
+                    if event.button == 1:
+                        if promoting:
+                            options = ["WQ", "WR", "WB", "WN"] if promoting_piece.piece_type == "WP" else ["BQ", "BR", "BB", "BN"]
+                            for i, option in enumerate(options):
+                                if pygame.Rect(i * 75, 262, 75, 75).collidepoint(event.pos):
+                                    promoting_piece.promote(option)
+                                    promoting = False
+                                    break
+                        else:
+                            for piece in reversed(all_pieces):
+                                dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
+                                if pygame.Rect(dx, dy, 75, 75).collidepoint(event.pos):
+                                    if (white_turn and piece.piece_type.startswith("W")) or \
+                                        (not white_turn and piece.piece_type.startswith("B")):
+                                            piece.dragging = True
+                                            mx, my = transform(event.pos[0], event.pos[1], rotated)
+                                            piece.offset = (piece.rect.x - mx, piece.rect.y - my)
+                                            piece.origin = (piece.rect.x, piece.rect.y)
+                                            valid_moves, occupied, castling_moves, en_passant_moves = get_legal_moves(piece, all_pieces, white_turn, turn_number)
+                                            break
                 
             #########################
             # Mouse button released #
@@ -493,6 +573,11 @@ def main():
                                 turn_number += 1
                                 time.sleep(0.75)
                                 white_turn = not white_turn
+
+                                in_check = is_in_check(all_pieces, white_turn)
+                                if is_checkmate(all_pieces, white_turn, turn_number):
+                                    game_over = True
+
                                 rotated = not rotated
                             else:
                                 piece.rect.x, piece.rect.y = piece.origin
@@ -504,10 +589,10 @@ def main():
             ###############
             # Mouse moves #
             ###############
-            elif event.type == pygame.MOUSEMOTION: # Moves piece while dragging
-                mx, my = transform(event.pos[0], event.pos[1], rotated)
+            elif event.type == pygame.MOUSEMOTION:
                 for piece in all_pieces:
                     if piece.dragging:
+                        mx, my = transform(event.pos[0], event.pos[1], rotated)
                         piece.rect.x = mx + piece.offset[0]
                         piece.rect.y = my + piece.offset[1]
 
@@ -521,10 +606,16 @@ def main():
                 if (row + col) % 2 == 1:
                     pygame.draw.rect(window, BLACK, (col * 75, row * 75, 75, 75))
 
-        # Draws pieces during movement
+        # Draw pieces: non-dragging first, then dragging on top.
         for piece in all_pieces:
-            dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
-            window.blit(piece.image, (dx, dy))
+            if not piece.dragging:
+                dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
+                window.blit(piece.image, (dx, dy))
+
+        for piece in all_pieces:
+            if piece.dragging:
+                dx, dy = transform(piece.rect.x, piece.rect.y, rotated)
+                window.blit(piece.image, (dx, dy))
 
         # Highlights valid move location
         for (col, row) in valid_moves:
@@ -548,6 +639,15 @@ def main():
             for i, option in enumerate(options):
                 pygame.draw.rect(window, GRAY, (i * 75, 262, 75, 75))
                 window.blit(images[option], (i * 75, 262))
+
+        if game_over:
+            msg = "Checkmate! " + ("Black" if white_turn else "White") + " wins!"
+            text = font.render(msg, True, (200, 0, 0))
+            window.blit(text, (600 // 2 - text.get_width() // 2, 600 // 2 - text.get_height() // 2))
+        elif in_check:
+            msg = ("White" if white_turn else "Black") + " is in check!"
+            text = font.render(msg, True, (200, 0, 0))
+            window.blit(text, (10, 10))
 
         pygame.display.flip()
         clock.tick(FPS)

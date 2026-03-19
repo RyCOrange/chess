@@ -77,8 +77,18 @@ class chess_piece(pygame.sprite.Sprite):
                 target = (capture_col, row - 1)
                 if target in occupied and occupied[target].piece_type.startswith("B"):
                     moves.append(target)
+            # en Passant
+            en_passant_moves = set()
+            b_pawn_l = occupied.get((col - 1, row))
+            b_pawn_r = occupied.get((col + 1, row))
+            if b_pawn_l and b_pawn_l.piece_type == "BP" and b_pawn_l.move_counter == 1:
+                en_passant_moves.add((col - 1, row - 1))
+                moves.append((col - 1, row - 1))
+            elif b_pawn_r and b_pawn_r.piece_type == "BP" and b_pawn_r.move_counter == 1:
+                en_passant_moves((col + 1, row - 1))
+                moves.append((col + 1, row - 1))
             
-            return moves, occupied
+            return moves, occupied, set(), en_passant_moves
 
         # White knight movement
         if self.piece_type == "WN":
@@ -91,7 +101,7 @@ class chess_piece(pygame.sprite.Sprite):
                 elif occupied[target].piece_type.startswith("B"):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
-            return moves, occupied
+            return moves, occupied, set(), set()
         
         # White queen movement
         if self.piece_type == "WQ":
@@ -108,7 +118,7 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
         # White rook movement
         if self.piece_type == "WR":
@@ -124,7 +134,7 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
         # White bishop movement
         if self.piece_type == "WB":
@@ -140,12 +150,10 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
         # White king movement
         if self.piece_type == "WK":
-            wk_moves = [...]
-            moves = []
             wk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
                         (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
             moves = []
@@ -156,18 +164,20 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
             # Kingside castling
+            castling_moves = set()
             if self.move_counter == 0:
                 rook = occupied.get((7, 7))
                 if rook and rook.piece_type == "WR" and rook.move_counter == 0:
                     if (6, 7) not in occupied and (5, 7) not in occupied:
                         moves.append((6, 7))
-
-                # Queenside castling
+                        castling_moves.add((6, 7))
+                # Queenside Castling
                 rook = occupied.get((0, 7))
                 if rook and rook.piece_type == "WR" and rook.move_counter == 0:
                     if (1, 7) not in occupied and (2, 7) not in occupied and (3, 7) not in occupied:
                         moves.append((2, 7))
-            return moves, occupied
+                        castling_moves.add((2, 7))
+            return moves, occupied, castling_moves, set()
         
         ################
         # Black pieces #
@@ -190,8 +200,19 @@ class chess_piece(pygame.sprite.Sprite):
                 target = (capture_col, row + 1)
                 if target in occupied and occupied[target].piece_type.startswith("W"):
                     moves.append(target)
+
+            # en Passant
+            en_passant_moves = set()
+            w_pawn_l = occupied.get((col - 1, row))
+            w_pawn_r = occupied.get((col + 1, row))
+            if w_pawn_l and w_pawn_l.piece_type == "WP" and w_pawn_l.move_counter == 1:
+                en_passant_moves.add((col - 1, row + 1))
+                moves.append((col - 1, row + 1))
+            elif w_pawn_r and w_pawn_r.piece_type == "WP" and w_pawn_r.move_counter == 1:
+                en_passant_moves.add((col + 1, row + 1))
+                moves.append((col + 1, row + 1))
             
-            return moves, occupied
+            return moves, occupied, set(), en_passant_moves
 
         if self.piece_type == "BN":
             wn_moves = [(col - 1, row - 2), (col - 2, row - 1), (col + 1, row - 2), (col - 1, row + 2), 
@@ -203,7 +224,7 @@ class chess_piece(pygame.sprite.Sprite):
                 elif occupied[target].piece_type.startswith("W"):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
-            return moves, occupied
+            return moves, occupied, set(), set()
     
         # Black queen movement
         if self.piece_type == "BQ":
@@ -220,9 +241,9 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
-        # White rook movement
+        # Black rook movement
         if self.piece_type == "BR":
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]   # rook directions
             moves = []
@@ -236,9 +257,9 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
-        # White bishop movement
+        # Black bishop movement
         if self.piece_type == "BB":
             directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]   # bishop directions
             moves = []
@@ -252,12 +273,10 @@ class chess_piece(pygame.sprite.Sprite):
                     moves.append((cx, cy))  # Empty square
                     cx += dx
                     cy += dy
-            return moves, occupied
+            return moves, occupied, set(), set()
         
         # Black king moves
         if self.piece_type == "BK":
-            bk_moves = [...]
-            moves = []
             bk_moves = [(col - 1, row - 1), (col + 1, row + 1), (col + 1, row - 1), (col - 1, row + 1), (col, row + 1),
                         (col + 1, row), (col, row - 1), (col - 1, row), (col + 1, row)]
             moves = []
@@ -267,20 +286,22 @@ class chess_piece(pygame.sprite.Sprite):
                 elif occupied[target].piece_type.startswith("W"):
                     moves.append(target)  # Enemy piece, valid capture
                 # If friendly piece, do nothing (blocked)
-            # Kingside castling
+            castling_moves = set()
             if self.move_counter == 0:
+                # Kingside castling
                 rook = occupied.get((7, 0))
                 if rook and rook.piece_type == "BR" and rook.move_counter == 0:
                     if (6, 0) not in occupied and (5, 0) not in occupied:
                         moves.append((6, 0))
-
+                        castling_moves.add((6, 0))
                 # Queenside castling
                 rook = occupied.get((0, 0))
                 if rook and rook.piece_type == "BR" and rook.move_counter == 0:
                     if (1, 0) not in occupied and (2, 0) not in occupied and (3, 0) not in occupied:
                         moves.append((2, 0))
-            return moves, occupied
-        return [], occupied
+                        castling_moves.add((2, 0))
+            return moves, occupied, castling_moves, set()
+        return [], occupied, castling_moves, en_passant_moves
 
     def promote(self, new_type):
         self.piece_type = new_type
@@ -354,6 +375,8 @@ def main():
     rotated = False
     valid_moves = []
     occupied = {}
+    en_passant_moves = set()
+    castling_moves = set()
     promoting = False
     promoting_piece = None
     castling = False
@@ -389,7 +412,7 @@ def main():
                                         bx, by = transform(mx, my, rotated)
                                         piece.offset = (piece.rect.x - mx, piece.rect.y - my)
                                         piece.origin = (piece.rect.x, piece.rect.y)
-                                        valid_moves, occupied = piece.valid_moves(all_pieces)
+                                        valid_moves, occupied, castling_moves, en_passant_moves = piece.valid_moves(all_pieces)
                                         break
                 
             #########################
@@ -422,6 +445,27 @@ def main():
                                         target_piece != piece):
                                         all_pieces.remove(target_piece)  # Remove captured piece
                                         break
+
+                                # En passant capture
+                                if piece.piece_type == "WP":
+                                    origin_row = piece.origin[1] // 75
+                                    if row == origin_row - 1 and col != piece.origin[0] // 75:
+                                        # Diagonal move with no piece on destination = en passant
+                                        if (col, row) not in {(p.rect.x // 75, p.rect.y // 75) for p in all_pieces if p != piece}:
+                                            for target_piece in all_pieces[:]:
+                                                if target_piece.rect.x // 75 == col and target_piece.rect.y // 75 == origin_row:
+                                                    all_pieces.remove(target_piece)
+                                                    break
+                                elif piece.piece_type == "BP":
+                                    origin_row = piece.origin[1] // 75
+                                    if row == origin_row + 1 and col != piece.origin[0] // 75:
+                                        # Diagonal move with no piece on destination = en passant
+                                        if (col, row) not in {(p.rect.x // 75, p.rect.y // 75) for p in all_pieces if p != piece}:
+                                            for target_piece in all_pieces[:]:
+                                                if target_piece.rect.x // 75 == col and target_piece.rect.y // 75 == origin_row:
+                                                    all_pieces.remove(target_piece)
+                                                    break
+
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
                                 piece.move_counter += 1
@@ -444,6 +488,7 @@ def main():
 
                         piece.dragging = False
                     valid_moves = []
+                    castling_moves = set()
 
             ###############
             # Mouse moves #
@@ -476,10 +521,14 @@ def main():
             target = (col, row)
             highlight = pygame.Surface((75, 75), pygame.SRCALPHA)
     
-            if target in occupied and occupied[target]:
-                highlight.fill((255, 128, 128, 128))  # Semi-transparent red
+            if target in en_passant_moves:
+                highlight.fill((255, 128, 128, 128))
+            elif target in occupied and occupied[target]:
+                highlight.fill((255, 128, 128, 128))  # red - capture
+            elif target in castling_moves:
+                highlight.fill((100, 149, 237, 128))  # blue - castling
             else:
-                highlight.fill((144, 238, 144, 128))  # Semi-transparent green
+                highlight.fill((144, 238, 144, 128))  # green - normal move
             
             window.blit(highlight, (dx, dy))
         

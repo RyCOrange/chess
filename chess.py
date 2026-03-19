@@ -49,8 +49,9 @@ class chess_piece(pygame.sprite.Sprite):
         self.dragging = False
         self.offset = (0, 0)
         self.move_counter = 0
+        self.last_double_advance_turn = -1
 
-    def valid_moves(self, all_pieces):
+    def valid_moves(self, all_pieces, turn_number):
         col = self.rect.x // 75
         row = self.rect.y // 75
 
@@ -81,10 +82,10 @@ class chess_piece(pygame.sprite.Sprite):
             en_passant_moves = set()
             b_pawn_l = occupied.get((col - 1, row))
             b_pawn_r = occupied.get((col + 1, row))
-            if b_pawn_l and b_pawn_l.piece_type == "BP" and b_pawn_l.move_counter == 1:
+            if b_pawn_l and b_pawn_l.piece_type == "BP" and b_pawn_l.last_double_advance_turn == turn_number - 1:
                 en_passant_moves.add((col - 1, row - 1))
                 moves.append((col - 1, row - 1))
-            elif b_pawn_r and b_pawn_r.piece_type == "BP" and b_pawn_r.move_counter == 1:
+            elif b_pawn_r and b_pawn_r.piece_type == "BP" and b_pawn_r.last_double_advance_turn == turn_number - 1:
                 en_passant_moves((col + 1, row - 1))
                 moves.append((col + 1, row - 1))
             
@@ -205,10 +206,10 @@ class chess_piece(pygame.sprite.Sprite):
             en_passant_moves = set()
             w_pawn_l = occupied.get((col - 1, row))
             w_pawn_r = occupied.get((col + 1, row))
-            if w_pawn_l and w_pawn_l.piece_type == "WP" and w_pawn_l.move_counter == 1:
+            if w_pawn_l and w_pawn_l.piece_type == "WP" and w_pawn_l.last_double_advance_turn == turn_number - 1:
                 en_passant_moves.add((col - 1, row + 1))
                 moves.append((col - 1, row + 1))
-            elif w_pawn_r and w_pawn_r.piece_type == "WP" and w_pawn_r.move_counter == 1:
+            elif w_pawn_r and w_pawn_r.piece_type == "WP" and w_pawn_r.last_double_advance_turn == turn_number - 1:
                 en_passant_moves.add((col + 1, row + 1))
                 moves.append((col + 1, row + 1))
             
@@ -372,6 +373,7 @@ def main():
     clock = pygame.time.Clock()
     selected_piece = None
     white_turn = True
+    turn_number = 0
     rotated = False
     valid_moves = []
     occupied = {}
@@ -412,7 +414,7 @@ def main():
                                         bx, by = transform(mx, my, rotated)
                                         piece.offset = (piece.rect.x - mx, piece.rect.y - my)
                                         piece.origin = (piece.rect.x, piece.rect.y)
-                                        valid_moves, occupied, castling_moves, en_passant_moves = piece.valid_moves(all_pieces)
+                                        valid_moves, occupied, castling_moves, en_passant_moves = piece.valid_moves(all_pieces, turn_number)
                                         break
                 
             #########################
@@ -469,6 +471,13 @@ def main():
                                 piece.rect.x = col * 75
                                 piece.rect.y = row * 75
                                 piece.move_counter += 1
+
+                                # Increments pawn movement for en passant validity
+                                if piece.piece_type in ("WP", "BP"):
+                                    origin_row = piece.origin[1] // 75
+                                    if abs(row - origin_row) == 2:
+                                        piece.last_double_advance_turn = turn_number
+
                                 # Castling: if king moved 2 squares, move the rook too
                                 if piece.piece_type in ("WK", "BK") and abs(col - (piece.origin[0] // 75)) == 2:
                                     if col == 6:  # Kingside
@@ -480,7 +489,9 @@ def main():
                                             p.rect.x = rook_dest_col * 75
                                             p.move_counter += 1
                                             break
-                                time.sleep(0.5)
+
+                                turn_number += 1
+                                time.sleep(0.75)
                                 white_turn = not white_turn
                                 rotated = not rotated
                             else:
